@@ -81,4 +81,3 @@ if st.button("Generate Text"):
                     )
     else:
         st.warning("Please enter a prompt before generating.")
-
