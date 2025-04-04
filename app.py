@@ -1,13 +1,13 @@
 import os
-import openai
+from openai import OpenAI 
 import streamlit as st
 
-from weasyprint import HTML
+from fpdf import FPDF
 from docx import Document
 from config import Config
 
 
-openai.api_key = Config.OPENAI_API_KEY
+client = OpenAI(api_key=Config.OPENAI_API_KEY)
 
 
 UPLOAD_FOLDER = "uploaded_files"
@@ -35,18 +35,23 @@ if st.button("Generate Text"):
     if prompt:
         with st.spinner("Generating response..."):
             response = client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}]
             )
             generated_text = response.choices[0].message.content
             st.text_area("Generated Text:", value=generated_text, height=200)
 
             pdf_path = os.path.join(OUTPUT_FOLDER, "openai_generated.pdf")
-            content_for_html = generated_text.replace('\n', '<br>')
-            with open(template_path, "r") as file:
-                html_template = file.read()
-            html_content = html_template.replace("{content}", content_for_html)
-            HTML(string=html_content).write_pdf(pdf_path)
+
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_auto_page_break(auto=True, margin=15)
+            pdf.set_font("Arial", size=12)
+
+            for line in generated_text.split("\n"):
+                pdf.multi_cell(0, 10, line)
+
+            pdf.output(pdf_path)
 
             docx_path = os.path.join(OUTPUT_FOLDER, "openai_generated.docx")
             doc = Document()
